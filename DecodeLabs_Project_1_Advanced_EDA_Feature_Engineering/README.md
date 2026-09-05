@@ -159,7 +159,7 @@ python run_pipeline.py
 Run tests:
 
 ```bash
-pytest -q
+python -m pytest -q
 ```
 
 Open the notebook for a step-by-step analytical walkthrough:
