@@ -1,0 +1,13 @@
+{
+  "rows": 1200,
+  "columns_raw": 14,
+  "columns_processed": 25,
+  "date_min": "2023-01-01",
+  "date_max": "2025-06-30",
+  "missing_coupon_count": 309,
+  "missing_coupon_pct": 25.75,
+  "duplicate_order_ids": 0,
+  "totalprice_iqr_lower": -1341.4125,
+  "totalprice_iqr_upper": 3330.4075,
+  "totalprice_iqr_outliers": 8
+}
