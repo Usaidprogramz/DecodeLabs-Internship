@@ -1,0 +1,5 @@
+column,q1,q3,iqr,lower_bound,upper_bound,n_outliers,pct_outliers
+Quantity,2.0,4.0,2.0,-1.0,7.0,0,0.0
+UnitPrice,186.06,521.57,335.51,-317.2,1024.83,0,0.0
+ItemsInCart,4.0,7.0,3.0,-0.5,11.5,0,0.0
+TotalPrice,410.52,1578.48,1167.96,-1341.41,3330.41,8,0.67

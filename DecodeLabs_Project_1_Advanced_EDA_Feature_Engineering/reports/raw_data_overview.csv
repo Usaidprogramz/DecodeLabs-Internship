@@ -1,0 +1,15 @@
+column,dtype,n_missing,pct_missing,n_unique
+CouponCode,str,309,25.75,3
+OrderID,str,0,0.0,1200
+CustomerID,str,0,0.0,1189
+Product,str,0,0.0,7
+Quantity,int64,0,0.0,5
+Date,datetime64[us],0,0.0,671
+UnitPrice,float64,0,0.0,1193
+ShippingAddress,str,0,0.0,655
+OrderStatus,str,0,0.0,5
+PaymentMethod,str,0,0.0,5
+TrackingNumber,str,0,0.0,1200
+ItemsInCart,int64,0,0.0,10
+ReferralSource,str,0,0.0,5
+TotalPrice,float64,0,0.0,1195

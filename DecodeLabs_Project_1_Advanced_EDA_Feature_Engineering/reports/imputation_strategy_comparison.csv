@@ -1,0 +1,4 @@
+strategy,MAE_on_masked_values,RMSE_on_masked_values,reconstructed_std,original_std,std_distortion_pct
+KNN (k=5),90.1287,113.6211,193.9537,197.1771,1.63
+Mean,171.0384,197.9118,181.6598,197.1771,7.87
+Median,170.8796,198.1804,181.6678,197.1771,7.87

@@ -1,0 +1,2 @@
+column,pct_missing,strategy,note
+CouponCode,25.75,domain_sentinel_override,"25.75% missing falls in the >20% KNN band, but missingness here is MNAR (no coupon applied), so filled with sentinel 'NoCoupon' instead of statistical estimation."

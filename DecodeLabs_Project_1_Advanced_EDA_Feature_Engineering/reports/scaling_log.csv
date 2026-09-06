@@ -1,0 +1,9 @@
+column,pre_scale_mean,pre_scale_std
+Quantity,2.9458,1.4076
+UnitPrice,356.4128,197.1771
+ItemsInCart,5.485,2.282
+TotalPrice,1053.6432,818.9379
+CartFillRatio,0.5799,0.2499
+CustomerOrderCount,1.0183,0.1342
+OrderMonth,5.995,3.3443
+OrderDayOfWeek,3.0508,2.0261

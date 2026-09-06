@@ -1,0 +1,21 @@
+# Core data manipulation
+pandas>=2.1
+numpy>=1.26
+
+# Excel file support (reading the raw .xlsx dataset)
+openpyxl>=3.1
+
+# Machine learning utilities (KNNImputer, error metrics)
+scikit-learn>=1.3
+
+# Visualization
+matplotlib>=3.8
+seaborn>=0.13
+
+# Testing
+pytest>=7.4
+
+# Notebook execution (optional — only needed to re-run/re-execute the notebook)
+jupyter>=1.0
+nbconvert>=7.0
+ipykernel>=6.25
