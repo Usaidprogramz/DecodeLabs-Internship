@@ -1,0 +1,2 @@
+model,classifier__C,classifier__solver,smote__k_neighbors,best_cv_recall
+Logistic Regression,0.1,liblinear,7,0.5075
