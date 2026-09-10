@@ -2,81 +2,152 @@
 
 **DecodeLabs Industrial Training Kit · Batch 2026**
 
-A leak-free supervised classification pipeline that flags potentially fraudulent
-orders in a highly-imbalanced-by-design setup, comparing a linear baseline
-(Logistic Regression) against an ensemble model (Random Forest), tuned with
-`GridSearchCV` on recall and evaluated with Precision/Recall/F1/ROC-AUC —
-**accuracy deliberately excluded**.
+A leak-free supervised classification pipeline that flags potentially fraudulent orders using a **proxy target** in a highly imbalanced-by-design classification setup.
 
-> This repository was completed as part of a Data Science internship / training
-> assignment at DecodeLabs. It builds directly on
-> [Project 1](../DecodeLabs_Project_1_Advanced_EDA_Feature_Engineering) — see the
-> **Dataset** section below for exactly what's reused and why.
+The project compares a linear baseline (**Logistic Regression**) against an ensemble model (**Random Forest**), with both models tuned using `GridSearchCV` to optimize **recall** and evaluated using **Precision, Recall, F1-Score, and ROC-AUC**.
 
----
+**Accuracy is deliberately excluded.**
 
-## ⚠️ Read this first: `IsFraud` is a proxy label, not real fraud data
-
-The Project 1 orders dataset has **no genuine fraud/legitimate column**. To still
-build and practice a real fraud-detection *pipeline* on it, this project defines:
-
-```
-IsFraud = 1   if OrderStatus is "Returned" or "Cancelled"
-IsFraud = 0   otherwise
-```
-
-This is a legitimate, common technique when true labels aren't available — problem
-orders (returns, cancellations) often correlate with disputes or bad-actor behavior
-in real businesses. **But it is a simplification, not a claim that these orders are
-confirmed fraud**, and every result in this project is described as "predicting
-problem orders (returned/cancelled)," never as "detecting confirmed financial
-fraud." The modeling architecture (leak-free splits, SMOTE, recall-first tuning,
-Precision/Recall/ROC-AUC evaluation) is exactly what a real fraud pipeline would
-use — the label is the only thing simplified here.
+> This repository was completed as part of a Data Science internship / training assignment at DecodeLabs.
+>
+> It builds directly on **Project 1**, using its cleaned dataset as the starting point.
 
 ---
 
-## Project Requirements → What Was Built
+## ⚠️ Important: `IsFraud` Is a Proxy Label
 
-| Brief requirement | Implementation |
-|---|---|
-| Build a classification model to identify fraudulent transactions in a highly imbalanced dataset | `IsFraud` proxy target built in [`src/target_builder.py`](src/target_builder.py); full pipeline in [`src/pipeline.py`](src/pipeline.py) |
-| Implement SMOTE to handle class imbalance | [`src/modeling.py`](src/modeling.py) — SMOTE wrapped inside `imblearn.pipeline.Pipeline`, re-fit on every CV training fold only |
-| Train multiple algorithms (Logistic Regression, Random Forest) using Scikit-Learn | Both implemented, tuned via `GridSearchCV` |
-| Discard "Accuracy" and evaluate using strict Precision, Recall, and ROC-AUC | [`src/evaluation.py`](src/evaluation.py) — `EvaluationResult` has no accuracy field at all (tested) |
-| Key skills: classification algorithms, Scikit-Learn pipelines, imbalanced data handling, hyperparameter tuning | Used throughout |
+The Project 1 orders dataset does **not** contain a genuine fraud/legitimate label.
 
-The brief's slide deck ("The Leak-Free Pipeline") calls out two specific traps this
-project is built to avoid:
+To practice building a realistic fraud-detection classification pipeline, this project constructs a proxy target:
 
-- **Trap #1 — The Illusion of Accuracy:** never computed here. See `evaluation.py`.
-- **Trap #2 — The Data Leakage Catastrophe:** SMOTE and scaling are applied **only**
-  inside `imblearn.pipeline.Pipeline`, and the train/test split happens **before**
-  either ever runs. See the Methodology section below and
-  `tests/test_pipeline.py`'s leakage-safety tests.
+```text
+IsFraud = 1  if OrderStatus is "Returned" or "Cancelled"
+
+IsFraud = 0  otherwise
+```
+
+This means the model is **not detecting confirmed financial fraud**.
+
+Instead, it is predicting **problem orders** represented by returned or cancelled orders.
+
+This distinction is important because returned or cancelled orders can sometimes correlate with disputes, suspicious activity, or operational problems in real-world businesses, but they are **not automatically fraudulent**.
+
+Therefore, throughout this project, the target is treated as a **fraud proxy** rather than genuine fraud.
+
+The machine-learning architecture, however, follows the same principles that would be appropriate for a real fraud-detection problem:
+
+* Leak-free train/test splitting
+* Stratified sampling
+* SMOTE for class imbalance
+* Cross-validation
+* Recall-first hyperparameter tuning
+* Precision / Recall / F1 evaluation
+* ROC-AUC evaluation
+* Confusion matrices
+* Feature-importance analysis
 
 ---
 
-## Repository Structure
+# 🎯 Project Requirements → Implementation
 
+| Requirement                                                      | Implementation                                                   |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Build a classification model for fraudulent/problem transactions | `IsFraud` proxy target created in `src/target_builder.py`        |
+| Handle class imbalance using SMOTE                               | SMOTE implemented inside `imblearn.pipeline.Pipeline`            |
+| Train multiple classification algorithms                         | Logistic Regression and Random Forest                            |
+| Tune models using cross-validation                               | `GridSearchCV`                                                   |
+| Optimize for recall                                              | `scoring="recall"`                                               |
+| Avoid data leakage                                               | Stratified split before resampling and scaling                   |
+| Evaluate without accuracy                                        | Precision, Recall, F1-Score and ROC-AUC                          |
+| Analyze model behavior                                           | Confusion matrices, ROC curves, PR curves and feature importance |
+| Test pipeline safety                                             | 17 automated tests                                               |
+
+---
+
+# 🛡️ Leak-Free Pipeline
+
+This project specifically focuses on avoiding two major machine-learning problems.
+
+### Trap #1 — The Illusion of Accuracy
+
+Accuracy is **not calculated or reported** anywhere in the evaluation system.
+
+Instead, the project focuses on:
+
+* Precision
+* Recall
+* F1-Score
+* ROC-AUC
+
+This is particularly important for fraud-detection-style problems where missing a potentially problematic transaction can be more costly than generating a false alarm.
+
+---
+
+### Trap #2 — Data Leakage
+
+SMOTE and feature scaling are applied **inside the machine-learning pipeline**, rather than before the train/test split.
+
+The workflow is:
+
+```text
+Original Dataset
+       ↓
+Build IsFraud Proxy Target
+       ↓
+Feature Engineering
+       ↓
+Remove Leaky Features
+       ↓
+Stratified Train/Test Split
+       ↓
+       ├─────────────── Test Set
+       │                   ↓
+       │              Final Evaluation
+       │
+       └── Training Set
+               ↓
+        Cross Validation
+               ↓
+             SMOTE
+               ↓
+          Scaling*
+               ↓
+            Model
 ```
+
+`*` Scaling is used for Logistic Regression but not for Random Forest.
+
+Because SMOTE is contained inside `imblearn.pipeline.Pipeline`, synthetic samples are generated only from the training portion of each cross-validation fold.
+
+The held-out validation/test data is never resampled.
+
+---
+
+# 📁 Repository Structure
+
+```text
 .
 ├── data/
 │   ├── raw/
-│   │   └── project1_cleaned_dataset.csv   # Project 1's cleaned output (input here)
+│   │   └── project1_cleaned_dataset.csv
+│   │
 │   └── processed/
-│       └── orders_with_fraud_features.csv # + IsFraud target + 6 engineered features
+│       └── orders_with_fraud_features.csv
+│
 ├── notebooks/
-│   └── Fraud_Detection_Pipeline.ipynb     # Narrative walkthrough (pre-executed)
+│   └── Fraud_Detection_Pipeline.ipynb
+│
 ├── reports/
 │   ├── class_balance.csv
 │   ├── model_evaluation_metrics.csv
 │   ├── logistic_regression_best_params.csv
 │   ├── random_forest_best_params.csv
 │   ├── random_forest_feature_importance.csv
+│   │
 │   └── figures/
 │       ├── 00_class_balance.png
 │       └── 01_fraud_detection_dashboard.png
+│
 ├── src/
 │   ├── data_loader.py
 │   ├── target_builder.py
@@ -85,8 +156,10 @@ project is built to avoid:
 │   ├── evaluation.py
 │   ├── plotting.py
 │   └── pipeline.py
+│
 ├── tests/
-│   └── test_pipeline.py                   # 17 tests, ~half dedicated to leakage safety
+│   └── test_pipeline.py
+│
 ├── main.py
 ├── requirements.txt
 ├── LICENSE
@@ -95,190 +168,681 @@ project is built to avoid:
 
 ---
 
-## Quick Start
+# 🚀 Quick Start
+
+### 1. Create a virtual environment
 
 ```bash
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-
-python main.py                  # runs the full pipeline end-to-end
-pytest -v                       # runs all 17 tests, including leakage-safety checks
-jupyter notebook notebooks/Fraud_Detection_Pipeline.ipynb   # already pre-executed
 ```
 
-`main.py` regenerates every file under `data/processed/` and `reports/` from
-`data/raw/project1_cleaned_dataset.csv`.
+### 2. Activate the environment
 
----
+**Windows PowerShell:**
 
-## Dataset
+```powershell
+venv\Scripts\activate
+```
 
-**Input:** `data/raw/project1_cleaned_dataset.csv` — the fully cleaned,
-feature-engineered output of Project 1 (1,200 orders, 25 columns; no missing
-values, outliers already winsorized). This project does not re-clean raw data —
-Project 1 already did that work, and Project 2 builds directly on top of it.
+**Linux / macOS:**
 
-**Target construction:** `IsFraud` = 1 for `OrderStatus` in `{Returned, Cancelled}`,
-else 0. On this dataset that comes out to:
+```bash
+source venv/bin/activate
+```
 
-| Label | Count | % |
-|---|---|---|
-| Legitimate (0) | 703 | 58.6% |
-| Fraud-proxy (1) | 497 | 41.4% |
+### 3. Install dependencies
 
-**Worth noting honestly:** this is nowhere near the extreme (<1%) imbalance real
-fraud datasets have — it's a direct consequence of the synthetic data generator
-assigning each of the 5 order statuses roughly equal probability (~20% each), so
-`Returned + Cancelled ≈ 40%`. The full imbalanced-learning toolkit (SMOTE,
-recall-first tuning) is still applied exactly as a genuinely rare-event problem
-would require, but the lift from these techniques is naturally more modest here
-than on a truly imbalanced dataset.
+```bash
+pip install -r requirements.txt
+```
 
----
+### 4. Run the complete pipeline
 
-## Methodology
+```bash
+python main.py
+```
 
-### 1. Feature Engineering
-
-Six new features, built on top of Project 1's cleaned columns:
-
-| Feature | Formula | Purpose |
-|---|---|---|
-| `AvgItemValue` | `TotalPrice / ItemsInCart` | Average value per item in the cart |
-| `ItemsPerOrder` | `ItemsInCart / (Quantity + 1)` | Cart-to-purchase ratio |
-| `IsHighValue` | `TotalPrice` > 95th percentile | Flags unusually large orders |
-| `PricePerUnit` | `TotalPrice / Quantity` | Normalizes price by quantity |
-| `HasDiscount` | `CouponUsed` (from Project 1) | Coupon usage as a candidate signal |
-| `WeekendFraud` | `IsWeekendOrder × IsFraud` | **Exploratory only** — see below |
-
-### 2. Leakage Guardrails
-
-Two categories of columns are explicitly dropped before modeling
-(`src/feature_engineering.drop_leaky_columns`), each with a dedicated test:
-
-- **`OrderStatus`** — the literal source of the label. Leaving it in the feature
-  matrix would let the model "predict" fraud by reading the answer key.
-- **`WeekendFraud`** — a direct function of the label (`IsWeekendOrder * IsFraud`),
-  built only for the exploratory weekday-vs-weekend chart in the notebook. Never a
-  model input.
-- **Identifiers** (`OrderID`, `CustomerID`, `TrackingNumber`, `ShippingAddress`) and
-  **already-encoded originals** (raw `Date`, raw `CouponCode`) — no generalizable
-  signal, or superseded by an already-engineered column.
-
-### 3. Stratified Split *Before* Any Resampling
-
-An 80/20 **stratified** train/test split runs first, before SMOTE or scaling touch
-anything. This guarantees the test set reflects the *true* class distribution and
-that no synthetic information can leak into evaluation.
-
-### 4. Leak-Free SMOTE via `imblearn.pipeline.Pipeline`
-
-A plain `sklearn.pipeline.Pipeline` only knows how to transform `X`. SMOTE needs to
-change **both** `X` and `y` (it invents new minority-class rows), so it doesn't fit
-that interface. `imblearn.pipeline.Pipeline` supports `fit_resample()` and, by
-construction, only ever applies it to whatever data it receives at `.fit()` time —
-which inside `GridSearchCV`'s cross-validation is only each fold's *training* split.
-The held-out fold in every CV round is never resampled.
-
-- **Logistic Regression:** `StandardScaler → SMOTE → LogisticRegression`
-  (unscaled features would distort the regularization penalty)
-- **Random Forest:** `SMOTE → RandomForestClassifier` (no scaler — tree splits are
-  scale-invariant)
-
-Both are tuned with `GridSearchCV` optimizing **recall**, not accuracy: in fraud
-detection, a missed fraud case (false negative) is typically far more costly than a
-false alarm.
-
-### 5. Evaluation — Accuracy Deliberately Excluded
-
-`EvaluationResult` in `src/evaluation.py` has no accuracy field at all — not
-"computed but ignored," genuinely not present, and a unit test asserts it stays
-that way. Precision, Recall, F1, and ROC-AUC are computed instead, alongside
-confusion matrices, ROC curves, precision-recall curves, and Random Forest feature
-importances.
-
----
-
-## Results
-
-| Metric | Logistic Regression | Random Forest |
-|---|---|---|
-| Precision | 0.377 | 0.368 |
-| **Recall** | **0.434** | 0.253 |
-| F1-Score | 0.404 | 0.299 |
-| ROC-AUC | 0.437 | 0.469 |
-
-**Best model by recall (the brief's selection criterion): Logistic Regression.**
-
-**Honest interpretation:** both models land close to **0.44–0.47 ROC-AUC** —
-essentially indistinguishable from a random classifier (AUC 0.50). This is a real
-finding, not a pipeline bug: the synthetic dataset assigns `OrderStatus` with no
-apparent causal relationship to any of the order's other attributes, so the
-`IsFraud` proxy has no real signal for these models to learn from the available
-features. The pipeline is working correctly — there's simply nothing predictive to
-find in this particular synthetic dataset. This is precisely why the leak-free
-discipline in this project matters: a leaky pipeline (SMOTE before splitting, or
-`OrderStatus` left in the features) could easily have produced a deceptively good
-looking score that wouldn't hold up on genuinely new data. The honest, near-random
-result here is evidence the pipeline can be trusted, not a discouraging outcome to
-paper over.
-
-Top Random Forest predictive signals (by importance): `TotalPrice`, `PricePerUnit`,
-`AvgItemValue`, `UnitPrice`, `OrderMonth` — see
-`reports/random_forest_feature_importance.csv` for the full ranking.
-
-Full dashboard (confusion matrices, ROC curves, PR curves, feature importance,
-metric comparison): `reports/figures/01_fraud_detection_dashboard.png`.
-
----
-
-## Tech Stack
-
-- **Python 3.12**
-- **pandas** & **NumPy**
-- **scikit-learn** — classification, `GridSearchCV`, metrics
-- **imbalanced-learn** — `SMOTE`, `imblearn.pipeline.Pipeline`
-- **matplotlib** & **seaborn** — dashboard visualization
-- **pytest** — unit testing
-- **Jupyter / nbconvert** — the narrative notebook
-
-See [`requirements.txt`](requirements.txt) for exact versions.
-
----
-
-## Testing
-
-17 unit tests, roughly half dedicated specifically to **leakage safety** — the
-central risk this brief warns about:
-
-- `OrderStatus` and `WeekendFraud` never enter the feature matrix (explicit
-  assertions on the actual column list)
-- every column named in the leaky-columns drop list is verifiably gone afterward
-- the feature matrix is fully numeric
-- a fitted SMOTE pipeline never resamples the test set
-- a stratified split preserves the true (imbalanced) class ratio in the held-out set
-- `EvaluationResult` has no accuracy field, by construction
+### 5. Run the tests
 
 ```bash
 pytest -v
 ```
 
----
+### 6. Open the notebook
 
-## Author's Note
+```bash
+jupyter notebook notebooks/Fraud_Detection_Pipeline.ipynb
+```
 
-This project treats the absence of a real fraud label as something to state
-plainly rather than paper over — see the caveat at the top of this README and in
-the notebook. The near-random ROC-AUC in the results section is reported exactly
-as it came out of the pipeline, with the reason explained, rather than smoothed
-into a more flattering number. A pipeline's leak-free discipline is only worth
-something if it's trusted to report an honest result even when that result isn't
-exciting — that's the standard this project holds itself to.
+The notebook contains the narrative walkthrough of the complete pipeline.
 
 ---
 
-## License
+# 📊 Dataset
 
-Released under the [MIT License](LICENSE).
+### Input Dataset
+
+The project uses:
+
+```text
+data/raw/project1_cleaned_dataset.csv
+```
+
+This is the cleaned and feature-engineered output from **Project 1**.
+
+The dataset contains:
+
+* **1,200 orders**
+* **25 original columns**
+* No missing values
+* Previously processed data from Project 1
+
+Project 2 does not repeat the complete raw-data cleaning process because that work was already completed in Project 1.
+
+---
+
+# 🎯 Target Construction
+
+The `IsFraud` proxy target is constructed using `OrderStatus`.
+
+```python
+IsFraud = 1
+```
+
+when:
+
+```text
+OrderStatus ∈ {Returned, Cancelled}
+```
+
+Otherwise:
+
+```python
+IsFraud = 0
+```
+
+### Actual Class Distribution
+
+The pipeline produced the following class balance:
+
+| Label           |     Count | Percentage |
+| --------------- | --------: | ---------: |
+| Legitimate (0)  |       703 |     58.58% |
+| Fraud-proxy (1) |       497 |     41.42% |
+| **Total**       | **1,200** |   **100%** |
+
+---
+
+## ⚠️ Class Imbalance Context
+
+Although this project uses an imbalanced-learning workflow, this dataset is **not extremely imbalanced** compared with real-world fraud datasets.
+
+The fraud-proxy class represents:
+
+```text
+497 / 1200 = 41.42%
+```
+
+This relatively high percentage occurs because the synthetic dataset assigns order statuses with approximately similar probabilities.
+
+Therefore:
+
+* `Returned + Cancelled` produces a large proxy-positive class.
+* The dataset does not represent a realistic <1% fraud rate.
+* SMOTE is still implemented to demonstrate the correct technique.
+* Recall-first model tuning is still used to demonstrate a realistic fraud-detection workflow.
+
+This limitation should be considered when interpreting the model results.
+
+---
+
+# 🧪 Methodology
+
+## 1. Feature Engineering
+
+Project 2 builds additional features on top of the cleaned Project 1 dataset.
+
+Examples include:
+
+| Feature         | Formula / Source               | Purpose                                |
+| --------------- | ------------------------------ | -------------------------------------- |
+| `AvgItemValue`  | `TotalPrice / ItemsInCart`     | Average value per cart item            |
+| `ItemsPerOrder` | `ItemsInCart / (Quantity + 1)` | Captures cart-to-purchase relationship |
+| `IsHighValue`   | `TotalPrice > 95th percentile` | Identifies unusually high-value orders |
+| `PricePerUnit`  | `TotalPrice / Quantity`        | Normalizes order value by quantity     |
+| `HasDiscount`   | `CouponUsed`                   | Indicates coupon usage                 |
+| `WeekendFraud`  | `IsWeekendOrder × IsFraud`     | Exploratory analysis only              |
+
+The resulting modeling dataset contains:
+
+```text
+37 features
+```
+
+before the train/test modeling process.
+
+---
+
+# 🔒 2. Leakage Prevention
+
+Several columns are explicitly removed before model training.
+
+### `OrderStatus`
+
+`OrderStatus` is the source used to construct `IsFraud`.
+
+Keeping it in the feature matrix would effectively give the model access to the answer.
+
+Therefore:
+
+```text
+OrderStatus → DROPPED
+```
+
+---
+
+### `WeekendFraud`
+
+`WeekendFraud` directly contains the target:
+
+```text
+IsWeekendOrder × IsFraud
+```
+
+Therefore, it is used only for exploratory analysis and is never passed to the machine-learning models.
+
+```text
+WeekendFraud → DROPPED
+```
+
+---
+
+### Identifiers
+
+The following identifiers are also excluded because they do not provide meaningful generalizable predictive information:
+
+```text
+OrderID
+CustomerID
+TrackingNumber
+ShippingAddress
+```
+
+Other raw/superseded columns are also removed where their information is already represented by engineered features.
+
+---
+
+# 3. Stratified Train/Test Split
+
+The dataset is divided into:
+
+```text
+Training rows: 960
+Test rows:     240
+```
+
+The split is performed using stratification.
+
+```text
+80% → Training
+20% → Testing
+```
+
+The split occurs **before SMOTE or scaling**.
+
+This ensures that:
+
+* The test set remains untouched.
+* The test set maintains the original class distribution.
+* Synthetic SMOTE samples cannot leak into evaluation.
+
+---
+
+# 4. SMOTE
+
+Because classification problems can contain unequal class distributions, the project uses:
+
+```text
+SMOTE
+```
+
+from `imbalanced-learn`.
+
+SMOTE is implemented inside:
+
+```text
+imblearn.pipeline.Pipeline
+```
+
+rather than being applied manually to the complete dataset.
+
+This is critical for preventing data leakage during cross-validation.
+
+---
+
+# 5. Logistic Regression Pipeline
+
+The Logistic Regression pipeline is:
+
+```text
+StandardScaler
+      ↓
+SMOTE
+      ↓
+Logistic Regression
+```
+
+Scaling is important for Logistic Regression because the model is sensitive to feature magnitude and regularization.
+
+### Best Hyperparameters
+
+The final `GridSearchCV` search selected:
+
+```text
+C = 0.1
+solver = liblinear
+SMOTE k_neighbors = 7
+```
+
+Best cross-validation recall:
+
+```text
+0.507
+```
+
+---
+
+# 6. Random Forest Pipeline
+
+The Random Forest pipeline is:
+
+```text
+SMOTE
+   ↓
+Random Forest
+```
+
+A scaler is not required because tree-based models are generally insensitive to feature scale.
+
+### Best Hyperparameters
+
+The final `GridSearchCV` search selected:
+
+```text
+class_weight = balanced
+max_depth = None
+n_estimators = 200
+SMOTE k_neighbors = 5
+```
+
+Best cross-validation recall:
+
+```text
+0.274
+```
+
+---
+
+# 7. Hyperparameter Tuning
+
+Both models are tuned using:
+
+```text
+GridSearchCV
+```
+
+The optimization metric is:
+
+```text
+Recall
+```
+
+rather than accuracy.
+
+This reflects the project's focus on identifying as many potentially problematic orders as possible.
+
+---
+
+# 📈 Results
+
+The final test-set evaluation produced:
+
+| Metric    | Logistic Regression | Random Forest |
+| --------- | ------------------: | ------------: |
+| Precision |           **0.377** |         0.344 |
+| Recall    |           **0.434** |         0.222 |
+| F1-Score  |           **0.404** |         0.270 |
+| ROC-AUC   |               0.437 |     **0.442** |
+
+### Best Model by Recall
+
+**Logistic Regression**
+
+```text
+Recall = 0.434
+```
+
+Logistic Regression was selected as the best model according to the project's primary selection criterion: **recall**.
+
+---
+
+# 🔍 Results Interpretation
+
+The results should be interpreted honestly.
+
+Neither model demonstrates strong predictive performance on the test set.
+
+The ROC-AUC scores are:
+
+```text
+Logistic Regression → 0.437
+Random Forest       → 0.442
+```
+
+Both are below the 0.50 level associated with random ranking.
+
+This suggests that the available features contain **very limited predictive signal for the `IsFraud` proxy target**.
+
+This is not necessarily a pipeline failure.
+
+The synthetic dataset's `OrderStatus` does not appear to have a strong relationship with the other available order attributes. Since `OrderStatus` is also the source of the target, it must be removed from the model to prevent leakage.
+
+The result therefore demonstrates an important machine-learning principle:
+
+> A correctly implemented model cannot manufacture meaningful predictive signal when the available features do not contain it.
+
+A leaky pipeline could have produced artificially impressive results by allowing `OrderStatus` into the feature matrix or by applying SMOTE before the train/test split.
+
+This project deliberately avoids those practices.
+
+---
+
+# 🌲 Random Forest Feature Importance
+
+The most important Random Forest features were:
+
+1. `TotalPrice`
+2. `PricePerUnit`
+3. `AvgItemValue`
+4. `UnitPrice`
+5. `OrderMonth`
+
+The complete ranking is available in:
+
+```text
+reports/random_forest_feature_importance.csv
+```
+
+Feature importance should be interpreted cautiously because the overall ROC-AUC indicates that these features provide limited predictive power for the proxy target.
+
+---
+
+# 📊 Generated Reports
+
+Running:
+
+```bash
+python main.py
+```
+
+generates the following outputs:
+
+```text
+data/processed/orders_with_fraud_features.csv
+
+reports/class_balance.csv
+
+reports/model_evaluation_metrics.csv
+
+reports/logistic_regression_best_params.csv
+
+reports/random_forest_best_params.csv
+
+reports/random_forest_feature_importance.csv
+
+reports/figures/00_class_balance.png
+
+reports/figures/01_fraud_detection_dashboard.png
+```
+
+The dashboard contains visualizations including:
+
+* Confusion matrices
+* ROC curves
+* Precision-Recall curves
+* Model metric comparison
+* Random Forest feature importance
+
+---
+
+# 🧪 Testing
+
+The project contains:
+
+```text
+17 automated tests
+```
+
+Run them with:
+
+```bash
+pytest -v
+```
+
+The test suite validates important properties of the pipeline, including:
+
+* `OrderStatus` is removed before modeling.
+* `WeekendFraud` is removed before modeling.
+* Leaky columns are not present in the feature matrix.
+* The final feature matrix is numeric.
+* The train/test split occurs before resampling.
+* SMOTE does not modify the held-out test set.
+* Stratification preserves the class distribution.
+* The modeling pipeline can be fitted successfully.
+* `EvaluationResult` does not contain an accuracy field.
+
+The leakage-safety tests are particularly important because preventing data leakage is one of the main goals of this project.
+
+---
+
+# 🧰 Tech Stack
+
+### Programming
+
+* Python 3.12
+
+### Data Processing
+
+* pandas
+* NumPy
+
+### Machine Learning
+
+* scikit-learn
+* Logistic Regression
+* Random Forest
+* GridSearchCV
+* Cross-validation
+* Feature scaling
+
+### Imbalanced Learning
+
+* imbalanced-learn
+* SMOTE
+* `imblearn.pipeline.Pipeline`
+
+### Evaluation
+
+* Precision
+* Recall
+* F1-Score
+* ROC-AUC
+* Confusion Matrix
+* ROC Curve
+* Precision-Recall Curve
+
+### Visualization
+
+* Matplotlib
+* Seaborn
+
+### Testing
+
+* pytest
+
+### Development / Documentation
+
+* Jupyter Notebook
+* nbconvert
+* VS Code
+* Git
+* GitHub
+
+---
+
+# 📚 Key Concepts Demonstrated
+
+This project demonstrates practical understanding of:
+
+* Binary classification
+* Logistic Regression
+* Random Forest
+* Imbalanced datasets
+* SMOTE
+* Stratified train/test splitting
+* Cross-validation
+* GridSearchCV
+* Hyperparameter tuning
+* Feature engineering
+* Feature scaling
+* Data leakage prevention
+* Precision vs Recall
+* F1-Score
+* ROC-AUC
+* Confusion matrices
+* Feature importance
+* Unit testing
+* Reproducible machine-learning pipelines
+
+---
+
+# 💡 Key Lessons
+
+### 1. Accuracy is not always the right metric
+
+For fraud-detection-style problems, accuracy can hide poor minority-class performance.
+
+This project therefore focuses on:
+
+```text
+Precision
+Recall
+F1
+ROC-AUC
+```
+
+---
+
+### 2. Data leakage can create misleading results
+
+Using the target itself as an input feature can make a model appear extremely accurate while making it useless on unseen data.
+
+This project explicitly removes target-derived features before modeling.
+
+---
+
+### 3. SMOTE must be used correctly
+
+SMOTE should not be applied to the entire dataset before splitting.
+
+Instead:
+
+```text
+Training Fold
+     ↓
+SMOTE
+     ↓
+Model
+```
+
+The validation/test data remains untouched.
+
+---
+
+### 4. Good pipelines can still produce poor scores
+
+A low score does not automatically mean the implementation is wrong.
+
+If the available features contain little predictive information, a properly designed model should report weak performance rather than artificially inflate its results.
+
+---
+
+# 📝 Author's Note
+
+This project intentionally documents the limitations of the dataset rather than presenting the proxy target as genuine fraud.
+
+The `IsFraud` label is derived from:
+
+```text
+Returned + Cancelled orders
+```
+
+and therefore should be interpreted only as a **problem-order / fraud-proxy classification task**.
+
+The near-random ROC-AUC results are reported exactly as produced by the pipeline.
+
+No accuracy score has been added to make the results appear better, and no leaky features have been retained to artificially increase model performance.
+
+The primary objective of this project is therefore not simply to achieve a high score, but to demonstrate how to build a **reproducible, leak-free, recall-focused classification pipeline** and honestly evaluate its limitations.
+
+---
+
+# 🔗 Related Project
+
+This project builds on the cleaned and feature-engineered dataset produced in **Project 1**.
+
+```text
+Project 1
+Advanced EDA & Feature Engineering
+        ↓
+Cleaned Dataset
+        ↓
+Project 2
+Fraud Detection Pipeline
+```
+
+---
+
+# 📄 License
+
+This project is released under the [MIT License](LICENSE).
+
+---
+
+## ⭐ Project Summary
+
+```text
+Dataset
+   ↓
+Target Construction
+   ↓
+Feature Engineering
+   ↓
+Leakage Prevention
+   ↓
+Stratified Train/Test Split
+   ↓
+SMOTE
+   ↓
+Logistic Regression + Random Forest
+   ↓
+GridSearchCV
+   ↓
+Recall Optimization
+   ↓
+Precision / Recall / F1 / ROC-AUC
+   ↓
+Final Evaluation & Analysis
+```
+
+**Built as part of the DecodeLabs Data Science Industrial Training Program — Batch 2026.**
