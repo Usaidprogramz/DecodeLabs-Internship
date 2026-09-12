@@ -1,0 +1,2 @@
+elbow_k,best_silhouette_k,chosen_k,final_silhouette_score,n_pca_components_kept,n_components_for_95pct_variance,cumulative_variance_kept
+5,2,2,0.3353,3,22,0.2582

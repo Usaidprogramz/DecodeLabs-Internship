@@ -1,0 +1,3 @@
+cluster_id,persona_name,size,pct_of_customers,recommended_action,AvgOrderValue,TotalSpend,CouponUsageRate,WeekendOrderRate,HighValueOrderRate,FraudProxyRate,AvgQuantity,UniqueProducts
+0,Full-Price Big Spenders,441,37.1,Prioritize for early access / premium loyalty perks — high spend without needing a discount to convert. Weekend-heavy ordering — time promotions for Friday/Saturday.,1907.7,1921.72,0.74,0.3,0.13,0.42,3.66,1.0
+1,Budget-Conscious Deal Hunters,748,62.9,Run frequent flash sales / coupon campaigns — this segment converts primarily on discounts.,552.59,557.34,0.75,0.29,0.0,0.41,2.53,1.01
